@@ -1,68 +1,41 @@
 const express = require('express')
+const mongoose = require('mongoose')
 const app = express()
-const collection = require('./arango');
 const cors = require("cors")
+const EmployeeModel = require('./models/Employee')
 
 
 app.use(express.json())
 app.use(cors())
 
+mongoose.connect("mongodb://127.0.0.1:27017/employee")
 
 
-
-app.get("/",cors(),(req,res)=>{
-
+app.post('/login',(req,res) => {
+    const {email,password} = req.body;
+    EmployeeModel.findOne({email:email})
+    .then(user => {
+        if(user){
+            if(user.password === password){
+                res.json("Success");
+            }else {
+                res.json("The password is incorrect")
+            }
+        }else {
+            res.json("No record existed");
+        }
+    })
 })
 
 
-app.post("/login",async(req,res)=>{
-    const{email,password}=req.body
+app.post('/register',(req,res) => {
+     EmployeeModel.create(req.body)
+     .then(employees => res.json(employees))
+     .catch(err => res.json(err))
+})
 
-    try{
-        const check=await collection.findOne({email:email})
-
-        if(check){
-            res.json("exist")
-        }
-        else{
-            res.json("notexist")
-        }
-
-    }
-    catch(e){
-        res.json("fail")
-    }
-
+app.listen(3001 , () => {
+    console.log("Server is running");
 })
 
 
-
-app.post("/signup",async(req,res)=>{
-    const{email,password}=req.body
-
-    const data={
-        email:email,
-        password:password
-    }
-
-    try{
-        const check=await collection.findOne({email:email})
-
-        if(check){
-            res.json("exist")
-        }
-        else{
-            res.json("notexist")
-            await collection.insertMany([data])
-        }
-
-    }
-    catch(e){
-        res.json("fail")
-    }
-
-})
-
-app.listen(8000,()=>{
-    console.log("port connected");
-})
